@@ -100,8 +100,34 @@ plot(allEffects(hyp.out))
 
 ##   1. Use glm to conduct a logistic regression to predict ever worked
 ##      (everwrk) using age (age_p) and marital status (r_maritl).
+
+levels(NH11$r_maritl)
+NH11$evermarry <- factor(NH11$r_maritl, 
+                         exclude=c("0 Under 14 years", "9 Unknown marital status"))
+worked_glm <- glm(everwrk ~ age_p + evermarry,
+               data=NH11, family="binomial")
+coef(summary(worked_glm))
+worked_coef <- coef(summary(worked_glm))
+worked_coef[, "Estimate"] <- exp(coef(worked_glm))
+worked_coef
+
 ##   2. Predict the probability of working for each level of marital
 ##      status.
+
+worked_predict <- with(NH11,
+                expand.grid(age_p = mean(age_p, na.rm=TRUE),
+                            evermarry = c("2 Married - spouse not in household",
+                                          "4 Widowed",
+                                          "5 Divorced",
+                                          "6 Separated",
+                                          "7 Never married",
+                                          "8 Living with partner")))
+# predict hypertension at those levels
+a <- cbind(worked_predict, predict(worked_glm, type = "response",
+                       se.fit = TRUE, interval="confidence",
+                       newdata = worked_predict))
+a[,c("evermarry", "fit")]
+#mac: divorced is least likely to have worked?
 
 ##   Note that the data is not perfectly clean and ready to be modeled. You
 ##   will need to clean up at least some of the variables before fitting
